@@ -1,67 +1,132 @@
 import pandas as pd
-from SPARQLWrapper import SPARQLWrapper, JSON
+import requests
 import os
+import re
+from io import StringIO
 
-def get_france_players():
-    print("Récupération des joueurs depuis Wikidata...")
+def get_current_squad_wikipedia():
+    print("⚽ Récupération Effectif (Filtre Anti-Lignes Fusionnées)...")
     
-    # Se connecter au endpoint public de Wikidata
-    sparql = SPARQLWrapper("https://query.wikidata.org/sparql")
+    url = "https://fr.wikipedia.org/wiki/%C3%89quipe_de_France_de_football"
+    headers = { "User-Agent": "Projet-Etudiant-Polytech/1.0" }
     
-    # REQUÊTE SPARQL :
-    # Retourne ID, Nom, Date de naissance
-    # Condition : A joué pour (P54) l'équipe de France masculine (Q47774)
-    query = """
-    SELECT DISTINCT ?player ?playerLabel ?dob ?positionLabel
-    WHERE {
-      ?player wdt:P54 wd:Q47774 .       # A joué pour l'équipe de France
-      ?player wdt:P569 ?dob .            # A une date de naissance
-      OPTIONAL { ?player wdt:P413 ?position . } # Optionnel: A un poste
-      
-      SERVICE wikibase:label { bd:serviceParam wikibase:language "fr,en". }
-    }
-    ORDER BY ?playerLabel
-    """
-    
-    sparql.setQuery(query)
-    sparql.setReturnFormat(JSON)
-    results = sparql.query().convert()
-
-    # Transformation des résultats en liste propre
-    players_data = []
-    for result in results["results"]["bindings"]:
+    try:
+        response = requests.get(url, headers=headers)
+        html_content = StringIO(response.text)
         
-        # Garder juste l'ID (ex: Q12345)
-        wikidata_id = result["player"]["value"].split("/")[-1]
+        # 1. Lecture brute (header=None pour tout attraper)
+        dfs = pd.read_html(html_content, attrs={"class": "toccolours"}, header=None)
         
-        # Nettoyage de la date (-> YYYY-MM-DD)
-        raw_date = result["dob"]["value"]
-        clean_date = raw_date.split("T")[0] 
+        if not dfs:
+            print("❌ Aucun tableau trouvé.")
+            return pd.DataFrame()
+
+        df_brut = dfs[0]
         
-        player_info = {
-            "wikidata_id": wikidata_id,
-            "nom": result["playerLabel"]["value"],
-            "date_naissance": clean_date,
-            "poste": result.get("positionLabel", {}).get("value", "Inconnu")
-        }
-        players_data.append(player_info)
+        # 2. SCANNER INTELLIGENT
+        header_index = -1
+        
+        # On scanne les 10 premières lignes
+        for i in range(10):
+            row = df_brut.iloc[i]
+            
+            # CRITÈRE 1 : Le texte "nom" et "club" doit être présent
+            row_text = " ".join(row.astype(str).values).lower()
+            has_keywords = "nom" in row_text and "club" in row_text
+            
+            # CRITÈRE 2 (LE SAUVEUR) : La ligne doit avoir au moins 3 cellules non-vides
+            # Cela élimine les lignes fusionnées qui mettent tout le texte dans la colonne 0
+            non_empty_cells = row.count() # Compte les valeurs qui ne sont pas NaN
+            
+            if has_keywords and non_empty_cells >= 4:
+                print(f"✅ Vraie ligne d'entête trouvée à l'index {i} (avec {non_empty_cells} colonnes valides)")
+                header_index = i
+                break
+        
+        if header_index == -1:
+            print("❌ Impossible de trouver une ligne d'entête valide (colonnes séparées).")
+            # Debug : on affiche les lignes pour comprendre
+            print(df_brut.head(5))
+            return pd.DataFrame()
 
+        # Application de l'entête
+        df_brut.columns = df_brut.iloc[header_index]
+        df = df_brut[header_index + 1:].copy()
+        
+        # Nettoyage des noms de colonnes
+        df.columns = [str(c).strip() for c in df.columns]
 
-    df = pd.read_json(pd.io.json.json_normalize(players_data).to_json())    
-    # On supprime les doublons (certains joueurs ont plusieurs postes enregistrés)
-    df = df.drop_duplicates(subset=['wikidata_id'])
-    
-    return df
+        # 3. MAPPING DYNAMIQUE
+        new_columns = {}
+        for col in df.columns:
+            col_clean = str(col).lower().strip()
+            
+            if "nom" in col_clean or "joueur" in col_clean:
+                new_columns[col] = "nom"
+            elif "naissance" in col_clean:
+                new_columns[col] = "date_naissance"
+            elif "club" in col_clean:
+                new_columns[col] = "club"
+            elif "n°" in col_clean or "num" in col_clean:
+                new_columns[col] = "numero"
+
+        df = df.rename(columns=new_columns)
+
+        # Vérification
+        required = ["nom", "date_naissance", "club"]
+        missing = [c for c in required if c not in df.columns]
+        if missing:
+            print(f"❌ ERREUR : Colonnes manquantes : {missing}")
+            print(f"Colonnes actuelles : {list(df.columns)}")
+            return pd.DataFrame()
+
+        # 4. FILTRAGE ET NETTOYAGE
+        
+        # Filtre sur le numéro (garde seulement les joueurs, vire les titres "Attaquants")
+        if 'numero' in df.columns:
+            df = df[pd.to_numeric(df['numero'], errors='coerce').notnull()]
+            df['numero'] = df['numero'].astype(float).astype(int)
+
+        def clean_name(val):
+            if pd.isna(val): return val
+            val = str(val)
+            val = re.sub(r"\[.*?\]", "", val)
+            val = val.replace("(cap.)", "")
+            return val.replace("\u00a0", " ").strip()
+
+        def clean_date(val):
+            if pd.isna(val): return val
+            return str(val).split("(")[0].strip()
+
+        df['nom'] = df['nom'].apply(clean_name)
+        df['date_naissance'] = df['date_naissance'].apply(clean_date)
+        
+        df['wikidata_id'] = None
+        
+        # Réorganisation propre
+        cols_final = ['numero', 'nom', 'date_naissance', 'club', 'wikidata_id']
+        # On ne garde que les colonnes qui existent
+        cols_final = [c for c in cols_final if c in df.columns]
+        df = df[cols_final]
+
+        return df
+
+    except Exception as e:
+        print(f"❌ Erreur : {e}")
+        import traceback
+        traceback.print_exc()
+        return pd.DataFrame()
 
 if __name__ == "__main__":
-    # Création du dossier de sortie si inexistant
-    os.makedirs("data/raw", exist_ok=True)
+    os.makedirs(os.path.join("data", "raw"), exist_ok=True)
+    df = get_current_squad_wikipedia()
     
-    df_players = get_france_players()
-    
-    print(f"Succès ! {len(df_players)} joueurs récupérés.")
-    print(df_players.head())
-    
-    # Save en CSV
-    df_players.to_csv("data/raw/joueurs_base.csv", index=False)
-    print("Fichier sauvegardé dans 'data/raw/joueurs_base.csv'")
+    if not df.empty:
+        print(f"✅ SUCCÈS ! {len(df)} joueurs récupérés.")
+        print(df.head())
+        
+        path = os.path.join("data", "raw", "joueurs_base.csv")
+        df.to_csv(path, index=False)
+        print(f"💾 Sauvegardé : {path}")
+    else:
+        print("⚠️ Toujours vide.")

@@ -61,6 +61,11 @@ def generate_schema(df: pd.DataFrame, output_path: str = "data/schema.json") -> 
                             "name": "poste",
                             "type": "string",
                             "description": "Position principale du joueur sur le terrain."
+                        },
+                        {
+                            "name": "ville_naissance",
+                            "type": "string",
+                            "description": "Lieu de naissance."
                         }
                         # TODO : Ajouter les autres colonnes ici plus tard (Vitesse Valeur, etc.)
                     ]
