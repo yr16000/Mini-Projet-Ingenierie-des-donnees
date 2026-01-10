@@ -12,7 +12,7 @@ try:
     # TODO POUR LES AUTRES MEMBRES DE L'ÉQUIPE :
     # 1. Le fichier 'src/ingestion/get_sofifa.py' doit exister.
     # 2. Il doit contenir une fonction nommée exactement 'get_sofifa_real_stats'.
-    from ingestion.get_sofifa import get_sofifa_real_stats
+    from ingestion.get_sofifa_data import get_sofifa_real_stats
 
     # TODO POUR LES AUTRES MEMBRES DE L'ÉQUIPE :
     # 1. Le fichier 'src/ingestion/get_transfermarkt.py' doit exister.

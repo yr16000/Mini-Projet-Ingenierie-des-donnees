@@ -5,7 +5,7 @@ import re
 from io import StringIO
 
 def get_current_squad_wikipedia():
-    print("⚽ Récupération Effectif (Filtre Anti-Lignes Fusionnées)...")
+    print("Récupération des données...")
     
     url = "https://fr.wikipedia.org/wiki/%C3%89quipe_de_France_de_football"
     headers = { "User-Agent": "Projet-Etudiant-Polytech/1.0" }
@@ -14,7 +14,7 @@ def get_current_squad_wikipedia():
         response = requests.get(url, headers=headers)
         html_content = StringIO(response.text)
         
-        # 1. Lecture brute (header=None pour tout attraper)
+        # 1. EXTRACTION DES TABLEAUX
         dfs = pd.read_html(html_content, attrs={"class": "toccolours"}, header=None)
         
         if not dfs:
@@ -23,7 +23,7 @@ def get_current_squad_wikipedia():
 
         df_brut = dfs[0]
         
-        # 2. SCANNER INTELLIGENT
+        # 2. SCANNER POUR TROUVER LA BONNE LIGNE D'ENTÊTE DU TABLEAU
         header_index = -1
         
         # On scanne les 10 premières lignes
@@ -34,8 +34,8 @@ def get_current_squad_wikipedia():
             row_text = " ".join(row.astype(str).values).lower()
             has_keywords = "nom" in row_text and "club" in row_text
             
-            # CRITÈRE 2 (LE SAUVEUR) : La ligne doit avoir au moins 3 cellules non-vides
-            # Cela élimine les lignes fusionnées qui mettent tout le texte dans la colonne 0
+            # CRITÈRE 2 : La ligne doit avoir au moins 3 cellules non-vides
+            # Cela élimine les lignes fusionnées qui mettent tout le texte dans la 1ère colonne
             non_empty_cells = row.count() # Compte les valeurs qui ne sont pas NaN
             
             if has_keywords and non_empty_cells >= 4:
@@ -45,7 +45,7 @@ def get_current_squad_wikipedia():
         
         if header_index == -1:
             print("❌ Impossible de trouver une ligne d'entête valide (colonnes séparées).")
-            # Debug : on affiche les lignes pour comprendre
+            # Debug :
             print(df_brut.head(5))
             return pd.DataFrame()
 
@@ -56,7 +56,7 @@ def get_current_squad_wikipedia():
         # Nettoyage des noms de colonnes
         df.columns = [str(c).strip() for c in df.columns]
 
-        # 3. MAPPING DYNAMIQUE
+        # 3. MAPPING
         new_columns = {}
         for col in df.columns:
             col_clean = str(col).lower().strip()
@@ -127,6 +127,6 @@ if __name__ == "__main__":
         
         path = os.path.join("data", "raw", "joueurs_base.csv")
         df.to_csv(path, index=False)
-        print(f"💾 Sauvegardé : {path}")
+        print(f"✅ Sauvegardé : {path}")
     else:
         print("⚠️ Toujours vide.")
