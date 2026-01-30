@@ -10,13 +10,13 @@ numero,nom,date_naissance,club,wikidata_id,taille_m,ville_naissance
 17,William Saliba,24 mars 2001,Arsenal FC,Q56868118,1.92,Bondy
 21,Lucas Hernandez,14 février 1996,Paris Saint-Germain,Q18924954,1.84,Marseille
 22,Théo Hernandez,6 octobre 1997,Al-Hilal FC,Q23703372,1.84,Marseille
-6,Khéphren Thuram,26 mars 2001,Juventus FC,Q58465451,1.91,etranger (Italie)
+6,Khéphren Thuram,26 mars 2001,Juventus FC,Q58465451,1.91,etranger (Italy)
 8,Manu Koné,17 mai 2001,AS Rome,Q64029237,1.85,Colombes
 11,Michael Olise,12 décembre 2001,Bayern Munich,Q62050484,1.84,etranger (Royaume-Uni)
 13,N'Golo Kanté,29 mars 1991,Al-Ittihad Club,Q16665941,1.71,Paris
 18,Warren Zaïre-Emery,8 mars 2006,Paris Saint-Germain,Q111280241,1.78,Montreuil
 7,Christopher Nkunku,14 novembre 1997,AC Milan,Q21693199,1.78,Lagny-sur-Marne
-9,Hugo Ekitiké,20 juin 2002,Liverpool FC,,,
+9,Hugo Ekitiké,20 juin 2002,Liverpool FC,Q111269183,1.9,Reims
 10,Kylian Mbappé,20 décembre 1998,Real Madrid,Q21621995,1.85,Paris
 12,Bradley Barcola,2 septembre 2002,Paris Saint-Germain,Q99670930,1.82,Villeurbanne
 14,Rayan Cherki,17 août 2003,Manchester City,Q64736321,1.76,Lyon

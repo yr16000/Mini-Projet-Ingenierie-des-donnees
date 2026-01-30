@@ -1,0 +1,25 @@
+﻿numero,nom,date_naissance,club,wikidata_id,taille_m,ville_naissance,commune_nom,commune_population,commune_surface_km2,commune_densite,commune_departement,commune_region,commune_code_postal
+1,Brice Samba,25 avril 1994,Stade rennais FC,Q15627817,1.86,etranger (République du Congo),,,,,,,
+16,Mike Maignan,3 juillet 1995,AC Milan,Q17274709,1.91,Cayenne,Cayenne,62675.0,25.52,2455.7,973.0,3.0,97300.0
+23,Lucas Chevalier,6 novembre 2001,Paris Saint-Germain,Q98102459,1.89,Calais,Calais,67571.0,36.8,1836.19,62.0,32.0,62100.0
+2,Malo Gusto,19 mai 2003,Chelsea FC,Q78752401,1.79,Décines-Charpieu,Décines-Charpieu,29877.0,17.14,1743.24,69.0,84.0,69150.0
+3,Lucas Digne,20 juillet 1993,Aston Villa,Q72648,1.78,Meaux,Meaux,56905.0,15.37,3701.23,77.0,11.0,77100.0
+4,Dayot Upamecano,27 octobre 1998,Bayern Munich,Q20723878,1.86,Évreux,Évreux,49360.0,26.42,1868.51,27.0,28.0,27000.0
+5,Jules Koundé,12 novembre 1998,FC Barcelone,Q47170176,1.8,14e arrondissement de Paris,Parisot,1033.0,28.77,35.9,81.0,76.0,75014.0
+15,Ibrahima Konaté,25 mai 1999,Liverpool FC,Q30301454,1.94,13e arrondissement de Paris,Parisot,1033.0,28.77,35.9,81.0,76.0,75013.0
+17,William Saliba,24 mars 2001,Arsenal FC,Q56868118,1.92,Bondy,Bondy,50595.0,5.46,9261.73,93.0,11.0,93140.0
+21,Lucas Hernandez,14 février 1996,Paris Saint-Germain,Q18924954,1.84,Marseille,Marseillette,697.0,11.17,62.4,11.0,76.0,11800.0
+22,Théo Hernandez,6 octobre 1997,Al-Hilal FC,Q23703372,1.84,Marseille,Marseillette,697.0,11.17,62.4,11.0,76.0,11800.0
+6,Khéphren Thuram,26 mars 2001,Juventus FC,Q58465451,1.91,etranger (Italy),,,,,,,
+8,Manu Koné,17 mai 2001,AS Rome,Q64029237,1.85,Colombes,Colombes,91053.0,7.78,11705.88,92.0,11.0,92700.0
+11,Michael Olise,12 décembre 2001,Bayern Munich,Q62050484,1.84,etranger (Royaume-Uni),,,,,,,
+13,N'Golo Kanté,29 mars 1991,Al-Ittihad Club,Q16665941,1.71,Paris,Parisot,1033.0,28.77,35.9,81.0,76.0,75001.0
+18,Warren Zaïre-Emery,8 mars 2006,Paris Saint-Germain,Q111280241,1.78,Montreuil,Montreuillon,243.0,35.72,6.8,58.0,27.0,58800.0
+7,Christopher Nkunku,14 novembre 1997,AC Milan,Q21693199,1.78,Lagny-sur-Marne,Lagny-sur-Marne,21461.0,5.78,3712.4,77.0,11.0,77400.0
+9,Hugo Ekitiké,20 juin 2002,Liverpool FC,Q111269183,1.9,Reims,Reims,177674.0,46.82,3795.03,51.0,44.0,51100.0
+10,Kylian Mbappé,20 décembre 1998,Real Madrid,Q21621995,1.85,Paris,Parisot,1033.0,28.77,35.9,81.0,76.0,75001.0
+12,Bradley Barcola,2 septembre 2002,Paris Saint-Germain,Q99670930,1.82,Villeurbanne,Villeurbanne,163684.0,14.9,10984.62,69.0,84.0,69100.0
+14,Rayan Cherki,17 août 2003,Manchester City,Q64736321,1.76,Lyon,Lyon,519127.0,47.97,10820.94,69.0,84.0,69001.0
+19,Jean-Philippe Mateta,28 juin 1997,Crystal Palace,Q26964668,1.92,Sevran,Sevran,52535.0,7.26,7240.12,93.0,11.0,93270.0
+20,Florian Thauvin,26 janvier 1993,RC Lens,Q27476,1.79,Orléans,Orléans,116357.0,27.64,4209.63,45.0,24.0,45000.0
+24,Maghnes Akliouche,25 février 2002,AS Monaco,Q108910786,1.83,Tremblay-en-France,Tremblay-en-France,38348.0,22.66,1692.32,93.0,11.0,93290.0

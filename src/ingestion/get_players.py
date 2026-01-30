@@ -31,7 +31,8 @@ def get_current_squad_wikipedia():
             row = df_brut.iloc[i]
             
             # CRITÈRE 1 : Le texte "nom" et "club" doit être présent
-            row_text = " ".join(row.astype(str).values).lower()
+            # ✅ CORRECTION : Utiliser fillna('') pour remplacer les NaN par des strings vides
+            row_text = " ".join(row.fillna('').astype(str).values).lower()
             has_keywords = "nom" in row_text and "club" in row_text
             
             # CRITÈRE 2 : La ligne doit avoir au moins 3 cellules non-vides
@@ -100,8 +101,6 @@ def get_current_squad_wikipedia():
 
         df['nom'] = df['nom'].apply(clean_name)
         df['date_naissance'] = df['date_naissance'].apply(clean_date)
-        
-
         
         # Réorganisation propre
         cols_final = ['numero', 'nom', 'date_naissance', 'club']
