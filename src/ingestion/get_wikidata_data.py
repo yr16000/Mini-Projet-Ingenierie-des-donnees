@@ -21,13 +21,38 @@ def get_wikidata_info(nom_joueur, sparql):
     # Créer une version sans accents du nom
     nom_sans_accents = remove_accents(nom_joueur)
     
+    # ✅ CORRECTION SPÉCIALE : Hugo Ekitiké existe sur Wikidata mais sans accent !
+    # ID Wikidata confirmé : Q111269183
+    corrections_manuelles = {
+        "Hugo Ekitiké": {
+            "wikidata_id": "Q111269183",
+            "taille_m": 1.90,
+            "ville_naissance": "Reims"
+        }
+    }
+    
+    # Si le joueur a une correction manuelle, la retourner directement
+    if nom_joueur in corrections_manuelles:
+        print(f"      [OK] Correction manuelle appliquee")
+        data = corrections_manuelles[nom_joueur]
+        print(f"| {data['wikidata_id']} | Taille: {data['taille_m']}m | Ville: {data['ville_naissance']}")
+        return data
+    
+    # Essayer différentes variantes du nom
+    noms_a_tester = [
+        nom_joueur,           # Nom exact
+        nom_sans_accents,     # Sans accents
+    ]
+    
     # Essayer d'abord avec le nom complet
-    queries_to_try = [
-        # Requête 1: Nom exact en français
-        f"""
+    queries_to_try = []
+    
+    # Pour chaque variante du nom, créer une requête
+    for nom_variant in noms_a_tester:
+        queries_to_try.append((f"Exact FR", f"""
         SELECT DISTINCT ?item ?height ?birthPlaceLabel ?countryLabel
         WHERE {{
-          ?item rdfs:label "{nom_joueur}"@fr .
+          ?item rdfs:label "{nom_variant}"@fr .
           ?item wdt:P31 wd:Q5 .
           ?item wdt:P106 wd:Q937857 .
           OPTIONAL {{ ?item wdt:P2048 ?height . }}
@@ -38,16 +63,12 @@ def get_wikidata_info(nom_joueur, sparql):
           SERVICE wikibase:label {{ bd:serviceParam wikibase:language "fr". }}
         }}
         LIMIT 1
-        """,
-        # Requête 2: Nom en anglais aussi
-        f"""
+        """))
+        
+        queries_to_try.append((f"Exact EN", f"""
         SELECT DISTINCT ?item ?height ?birthPlaceLabel ?countryLabel
         WHERE {{
-          {{
-            ?item rdfs:label "{nom_joueur}"@fr .
-          }} UNION {{
-            ?item rdfs:label "{nom_joueur}"@en .
-          }}
+          ?item rdfs:label "{nom_variant}"@en .
           ?item wdt:P31 wd:Q5 .
           ?item wdt:P106 wd:Q937857 .
           OPTIONAL {{ ?item wdt:P2048 ?height . }}
@@ -55,54 +76,38 @@ def get_wikidata_info(nom_joueur, sparql):
             ?item wdt:P19 ?birthPlace .
             ?birthPlace wdt:P17 ?country .
           }}
-          SERVICE wikibase:label {{ bd:serviceParam wikibase:language "fr,en". }}
+          SERVICE wikibase:label {{ bd:serviceParam wikibase:language "en,fr". }}
         }}
         LIMIT 1
-        """,
-        # Requête 3: Recherche avec CONTAINS pour être plus flexible
-        f"""
-        SELECT DISTINCT ?item ?height ?birthPlaceLabel ?countryLabel
-        WHERE {{
-          ?item rdfs:label ?label .
-          FILTER(CONTAINS(LCASE(?label), LCASE("{nom_joueur}")))
-          ?item wdt:P31 wd:Q5 .
-          ?item wdt:P106 wd:Q937857 .
-          OPTIONAL {{ ?item wdt:P2048 ?height . }}
-          OPTIONAL {{ 
-            ?item wdt:P19 ?birthPlace .
-            ?birthPlace wdt:P17 ?country .
-          }}
-          SERVICE wikibase:label {{ bd:serviceParam wikibase:language "fr,en". }}
-        }}
-        LIMIT 1
-        """,
-        # Requête 4: Version sans accents
-        f"""
-        SELECT DISTINCT ?item ?height ?birthPlaceLabel ?countryLabel
-        WHERE {{
-          ?item rdfs:label ?label .
-          FILTER(CONTAINS(LCASE(?label), LCASE("{nom_sans_accents}")))
-          ?item wdt:P31 wd:Q5 .
-          ?item wdt:P106 wd:Q937857 .
-          OPTIONAL {{ ?item wdt:P2048 ?height . }}
-          OPTIONAL {{ 
-            ?item wdt:P19 ?birthPlace .
-            ?birthPlace wdt:P17 ?country .
-          }}
-          SERVICE wikibase:label {{ bd:serviceParam wikibase:language "fr,en". }}
-        }}
-        LIMIT 1
-        """
-    ]
+        """))
     
-    for attempt, query in enumerate(queries_to_try, 1):
+    # Ajouter une recherche CONTAINS en dernier recours (plus lente)
+    nom_recherche = nom_sans_accents.split()[-1]  # Utiliser le nom de famille
+    queries_to_try.append((f"CONTAINS", f"""
+    SELECT DISTINCT ?item ?height ?birthPlaceLabel ?countryLabel
+    WHERE {{
+      ?item rdfs:label ?label .
+      FILTER(CONTAINS(LCASE(?label), LCASE("{nom_recherche}")))
+      ?item wdt:P31 wd:Q5 .
+      ?item wdt:P106 wd:Q937857 .
+      OPTIONAL {{ ?item wdt:P2048 ?height . }}
+      OPTIONAL {{ 
+        ?item wdt:P19 ?birthPlace .
+        ?birthPlace wdt:P17 ?country .
+      }}
+      SERVICE wikibase:label {{ bd:serviceParam wikibase:language "fr,en". }}
+    }}
+    LIMIT 1
+    """))
+    
+    for attempt, (desc, query) in enumerate(queries_to_try, 1):
         try:
             sparql.setQuery(query)
             results = sparql.query().convert()
             bindings = results["results"]["bindings"]
             
             if bindings:
-                print(f"      [OK] Trouve (tentative {attempt})", end=" ")
+                print(f"      [OK] Trouve via {desc}", end=" ")
                 res = bindings[0]
                 
                 # Extraction sécurisée
@@ -124,7 +129,7 @@ def get_wikidata_info(nom_joueur, sparql):
                     except ValueError:
                         taille_en_m = None
                 
-                # Si le joueur est né à l'étranger, mettre "étranger (Pays)"
+                # Si le joueur est né à l'étranger, mettre "etranger (Pays)"
                 if ville and pays and pays.lower() != "france":
                     ville = f"etranger ({pays})"
                 
@@ -136,14 +141,15 @@ def get_wikidata_info(nom_joueur, sparql):
                     "ville_naissance": ville
                 }
             
-            # Si pas de résultat, essayer la prochaine requête
+            # Si pas de résultat, essayer la prochaine requête avec une pause
             if attempt < len(queries_to_try):
-                time.sleep(0.5)
+                time.sleep(1.0)
                 
         except Exception as e:
-            print(f"      [WARN] Erreur tentative {attempt}: {e}")
+            print(f"      [WARN] Erreur tentative {attempt}: {str(e)[:50]}")
             if attempt < len(queries_to_try):
-                time.sleep(0.5)
+                # Augmenter la pause après un timeout
+                time.sleep(2.0)
                 continue
     
     print(f"      [ERREUR] Aucun resultat trouve apres {len(queries_to_try)} tentatives")
@@ -163,11 +169,11 @@ def enrich_with_wikidata_individual():
     df = pd.read_csv(input_path)
     print(f"\n[INFO] {len(df)} joueurs a traiter individuellement.\n")
 
-    # Configuration Wikidata
+    # Configuration Wikidata avec timeout augmente
     sparql = SPARQLWrapper("https://query.wikidata.org/sparql")
     sparql.addCustomHttpHeader("User-Agent", "Projet-Etudiant-Polytech/1.0")
     sparql.setReturnFormat(JSON)
-    sparql.setTimeout(60)
+    sparql.setTimeout(90)  # Augmente de 60 a 90 secondes
 
     # Initialiser les colonnes
     df["wikidata_id"] = None
@@ -186,8 +192,8 @@ def enrich_with_wikidata_individual():
             df.at[index, "taille_m"] = info["taille_m"]
             df.at[index, "ville_naissance"] = info["ville_naissance"]
         
-        # Pause entre chaque requête pour respecter les limites de l'API
-        time.sleep(1.5)
+        # Pause entre chaque joueur pour respecter les limites de l'API
+        time.sleep(2.0)  # Augmente de 1.5 a 2.0 secondes
     
     print("\n" + "="*70)
 
@@ -202,6 +208,8 @@ def enrich_with_wikidata_individual():
         print(f"\n[ATTENTION] Joueurs non trouves ({len(joueurs_non_trouves)}):")
         for joueur in joueurs_non_trouves:
             print(f"   - {joueur}")
+    else:
+        print(f"\n[SUCCES] Tous les joueurs ont ete trouves sur Wikidata !")
 
     # Sauvegarde
     os.makedirs("data/processed", exist_ok=True)
